@@ -24,13 +24,14 @@ class SmokeEntryAdapter extends TypeAdapter<SmokeEntry> {
       trigger: fields[3] as String?,
       note: fields[4] as String?,
       pricePerPack: fields[5] as double?,
+      brand: fields[7] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SmokeEntry obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.createdAt)
       ..writeByte(1)
@@ -44,7 +45,9 @@ class SmokeEntryAdapter extends TypeAdapter<SmokeEntry> {
       ..writeByte(5)
       ..write(obj.pricePerPack)
       ..writeByte(6)
-      ..write(obj.id);
+      ..write(obj.id)
+      ..writeByte(7)
+      ..write(obj.brand);
   }
 
   @override

@@ -50,7 +50,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           content: const Text('Ayarlar kaydedildi'),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       );
       Future.delayed(const Duration(seconds: 1), () {

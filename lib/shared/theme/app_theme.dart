@@ -28,6 +28,10 @@ class AppColors {
 
   // Divider / Border
   static const divider = Color(0xFF2A2A2A);
+
+  // Premium / depth
+  static const cardShadow = Color(0x08000000);
+  static const primaryGlow = Color(0x18D4A843);
 }
 
 class AppTheme {
@@ -70,9 +74,10 @@ class AppTheme {
       cardTheme: const CardThemeData(
         color: AppColors.card,
         elevation: 0,
+        shadowColor: AppColors.cardShadow,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
+          borderRadius: BorderRadius.all(Radius.circular(20)),
           side: BorderSide(color: AppColors.divider, width: 1),
         ),
       ),

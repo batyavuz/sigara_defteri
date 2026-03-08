@@ -25,6 +25,9 @@ class SmokeEntry extends HiveObject {
   @HiveField(6)
   late String id;
 
+  @HiveField(7)
+  String? brand;
+
   SmokeEntry({
     required this.id,
     required this.createdAt,
@@ -33,5 +36,6 @@ class SmokeEntry extends HiveObject {
     this.trigger,
     this.note,
     this.pricePerPack,
+    this.brand,
   });
 }

@@ -20,16 +20,43 @@ class _LogScreenState extends ConsumerState<LogScreen> {
     {'id': 'nargile', 'label': 'Nargile', 'emoji': '🫧'},
   ];
 
+  /// Yaygın sigara markaları; "Özel" seçilirse metin kutusu açılır.
+  static const _brands = [
+    'Marlboro',
+    'Camel',
+    'Parliament',
+    'Winston',
+    'L&M',
+    'Bond',
+    'Pall Mall',
+    'Kent',
+    'Eclipse',
+    'Samsun',
+    'Tekel',
+    'Özel',
+  ];
+
   String _type = 'sigara';
   int _amount = 1;
   String? _trigger;
+  String? _brand; // seçili marka; "Özel" ise _customBrand kullanılır
+  final _customBrandCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
   bool _saving = false;
 
   @override
   void dispose() {
+    _customBrandCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
+  }
+
+  String? get _effectiveBrand {
+    if (_brand == null || _brand == 'Özel') {
+      final t = _customBrandCtrl.text.trim();
+      return t.isEmpty ? null : t;
+    }
+    return _brand;
   }
 
   Future<void> _save() async {
@@ -43,6 +70,7 @@ class _LogScreenState extends ConsumerState<LogScreen> {
       trigger: _trigger,
       note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
       pricePerPack: settings.pricePerPack > 0 ? settings.pricePerPack : null,
+      brand: _effectiveBrand,
     );
     await ref.read(todayEntriesProvider.notifier).add(entry);
     if (mounted) Navigator.pop(context, true);
@@ -72,6 +100,15 @@ class _LogScreenState extends ConsumerState<LogScreen> {
             _AmountSelector(
               value: _amount,
               onChanged: (v) => setState(() => _amount = v),
+            ),
+            const SizedBox(height: 28),
+            _SectionLabel('MARKA (OPSİYONEL)'),
+            const SizedBox(height: 10),
+            _BrandSelector(
+              brands: _brands,
+              selected: _brand,
+              customController: _customBrandCtrl,
+              onChanged: (v) => setState(() => _brand = v),
             ),
             const SizedBox(height: 28),
             _SectionLabel('TETİKLEYİCİ'),
@@ -228,6 +265,75 @@ class _CircleBtn extends StatelessWidget {
           size: 22,
         ),
       ),
+    );
+  }
+}
+
+// ── Tetikleyici grid ─────────────────────────────────────────────────────────
+
+class _BrandSelector extends StatelessWidget {
+  final List<String> brands;
+  final String? selected;
+  final TextEditingController customController;
+  final ValueChanged<String?> onChanged;
+
+  const _BrandSelector({
+    required this.brands,
+    required this.selected,
+    required this.customController,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isCustom = selected == 'Özel';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: brands.map((b) {
+            final isSelected = selected == b;
+            return GestureDetector(
+              onTap: () => onChanged(b),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primaryContainer : AppColors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : AppColors.divider,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Text(
+                  b,
+                  style: TextStyle(
+                    color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        if (isCustom) ...[
+          const SizedBox(height: 12),
+          TextField(
+            controller: customController,
+            maxLength: 40,
+            style: const TextStyle(color: AppColors.textPrimary),
+            decoration: const InputDecoration(
+              hintText: 'Marka adı yazın',
+              counterStyle: TextStyle(color: AppColors.textDisabled, fontSize: 12),
+            ),
+            onChanged: (_) => onChanged('Özel'),
+          ),
+        ],
+      ],
     );
   }
 }

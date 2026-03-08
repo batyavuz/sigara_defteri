@@ -64,20 +64,35 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            ...entries.map((e) => _EntryTile(entry: e, ref: ref)),
+            ...entries.asMap().entries.map((e) => _EntryTile(
+                  entry: e.value,
+                  index: e.key,
+                  ref: ref,
+                )),
           ],
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        foregroundColor: const Color(0xFF1A1200),
-        onPressed: () async {
-          final result = await Navigator.pushNamed(context, AppRouter.log);
-          if (result == true) {
-            ref.read(todayEntriesProvider.notifier).refresh();
-          }
-        },
-        child: const Icon(Icons.add, size: 28),
+      floatingActionButton: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.9, end: 1),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutBack,
+        builder: (context, scale, child) => Transform.scale(
+          scale: scale,
+          child: child,
+        ),
+        child: FloatingActionButton(
+          backgroundColor: AppColors.primary,
+          foregroundColor: const Color(0xFF1A1200),
+          elevation: 6,
+          focusElevation: 8,
+          onPressed: () async {
+            final result = await Navigator.pushNamed(context, AppRouter.log);
+            if (result == true) {
+              ref.read(todayEntriesProvider.notifier).refresh();
+            }
+          },
+          child: const Icon(Icons.add, size: 28),
+        ),
       ),
     );
   }
@@ -407,9 +422,14 @@ class _StatsLink extends StatelessWidget {
 
 class _EntryTile extends StatelessWidget {
   final SmokeEntry entry;
+  final int index;
   final WidgetRef ref;
 
-  const _EntryTile({required this.entry, required this.ref});
+  const _EntryTile({
+    required this.entry,
+    required this.index,
+    required this.ref,
+  });
 
   static const _typeEmojis = {
     'sigara': '🚬',
@@ -446,11 +466,23 @@ class _EntryTile extends StatelessWidget {
       onDismissed: (_) {
         ref.read(todayEntriesProvider.notifier).remove(entry.id);
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
+      child: TweenAnimationBuilder<double>(
+        key: ValueKey(entry.id),
+        tween: Tween(begin: 0, end: 1),
+        duration: Duration(milliseconds: 200 + (index * 40).clamp(0, 200)),
+        curve: Curves.easeOut,
+        builder: (context, value, child) => Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 8 * (1 - value)),
+            child: child,
+          ),
+        ),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
           color: AppColors.card,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.divider),
         ),
         child: Padding(
@@ -517,6 +549,17 @@ class _EntryTile extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (entry.brand != null && entry.brand!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        entry.brand!,
+                        style: const TextStyle(
+                          color: AppColors.textDisabled,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                     if (entry.note != null && entry.note!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
@@ -537,6 +580,7 @@ class _EntryTile extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 
