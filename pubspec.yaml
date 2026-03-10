@@ -2,7 +2,7 @@ name: sigara_defteri
 description: "Sigara ve vape tüketimini yargılamadan takip eden minimalist günlük uygulaması."
 publish_to: 'none'
 
-version: 1.0.0+3
+version: 1.0.0+4
 
 environment:
   sdk: ^3.7.0
@@ -45,6 +45,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  image: ^4.1.3
 
   # Code Generation
   build_runner: ^2.4.13
