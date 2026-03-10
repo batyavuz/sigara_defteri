@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sigara_defteri/models/smoke_entry.dart';
 import 'package:sigara_defteri/services/storage_service.dart';
+import 'package:sigara_defteri/services/widget_service.dart';
+import 'package:sigara_defteri/services/notification_service.dart';
 
 // ── Settings ─────────────────────────────────────────────────────────────────
 
@@ -9,11 +11,17 @@ class SettingsState {
   final double pricePerPack;
   final int cigsPerPack;
   final DateTime? quitDate;
+  final bool reminderEnabled;
+  final int reminderHour;
+  final int reminderMinute;
 
   const SettingsState({
     this.pricePerPack = 0.0,
     this.cigsPerPack = 20,
     this.quitDate,
+    this.reminderEnabled = false,
+    this.reminderHour = 20,
+    this.reminderMinute = 0,
   });
 
   double get pricePerCig => cigsPerPack > 0 ? pricePerPack / cigsPerPack : 0;
@@ -23,11 +31,17 @@ class SettingsState {
     int? cigsPerPack,
     DateTime? quitDate,
     bool clearQuitDate = false,
+    bool? reminderEnabled,
+    int? reminderHour,
+    int? reminderMinute,
   }) {
     return SettingsState(
       pricePerPack: pricePerPack ?? this.pricePerPack,
       cigsPerPack: cigsPerPack ?? this.cigsPerPack,
       quitDate: clearQuitDate ? null : (quitDate ?? this.quitDate),
+      reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+      reminderHour: reminderHour ?? this.reminderHour,
+      reminderMinute: reminderMinute ?? this.reminderMinute,
     );
   }
 }
@@ -44,7 +58,16 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       pricePerPack: prefs.getDouble('price_per_pack') ?? 0.0,
       cigsPerPack: prefs.getInt('cigs_per_pack') ?? 20,
       quitDate: quitStr != null ? DateTime.tryParse(quitStr) : null,
+      reminderEnabled: prefs.getBool('reminder_enabled') ?? false,
+      reminderHour: prefs.getInt('reminder_hour') ?? 20,
+      reminderMinute: prefs.getInt('reminder_minute') ?? 0,
     );
+    if (state.reminderEnabled) {
+      await NotificationService.scheduleDailyReminder(
+        hour: state.reminderHour,
+        minute: state.reminderMinute,
+      );
+    }
   }
 
   Future<void> setQuitDate(DateTime date) async {
@@ -70,6 +93,30 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await prefs.setInt('cigs_per_pack', value);
     state = state.copyWith(cigsPerPack: value);
   }
+
+  Future<void> setReminderEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('reminder_enabled', enabled);
+    state = state.copyWith(reminderEnabled: enabled);
+    if (enabled) {
+      await NotificationService.scheduleDailyReminder(
+        hour: state.reminderHour,
+        minute: state.reminderMinute,
+      );
+    } else {
+      await NotificationService.cancelDailyReminder();
+    }
+  }
+
+  Future<void> setReminderTime(int hour, int minute) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('reminder_hour', hour);
+    await prefs.setInt('reminder_minute', minute);
+    state = state.copyWith(reminderHour: hour, reminderMinute: minute);
+    if (state.reminderEnabled) {
+      await NotificationService.scheduleDailyReminder(hour: hour, minute: minute);
+    }
+  }
 }
 
 final settingsProvider =
@@ -89,11 +136,13 @@ class TodayEntriesNotifier extends StateNotifier<List<SmokeEntry>> {
   Future<void> add(SmokeEntry entry) async {
     await StorageService.instance.addEntry(entry);
     refresh();
+    refreshHomeWidget();
   }
 
   Future<void> remove(String id) async {
     await StorageService.instance.deleteEntry(id);
     refresh();
+    refreshHomeWidget();
   }
 }
 
@@ -136,4 +185,16 @@ final todayTypeBreakdownProvider = Provider<Map<String, int>>((ref) {
     map[e.type] = (map[e.type] ?? 0) + e.amount;
   }
   return map;
+});
+
+/// Son 30 gün içinde ama 7 günden eski kayıtlar (dashboard blur + CTA için)
+final entriesOlderThan7DaysProvider = Provider<List<SmokeEntry>>((ref) {
+  ref.watch(todayEntriesProvider);
+  final all = StorageService.instance.getEntriesForLastNDays(30);
+  final cutoff = DateTime.now().subtract(const Duration(days: 7));
+  final cutoffDate = DateTime(cutoff.year, cutoff.month, cutoff.day);
+  return all.where((e) {
+    final d = DateTime(e.createdAt.year, e.createdAt.month, e.createdAt.day);
+    return d.isBefore(cutoffDate);
+  }).toList();
 });

@@ -3,11 +3,13 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:sigara_defteri/app/router.dart';
 import 'package:sigara_defteri/services/notification_service.dart';
 import 'package:sigara_defteri/services/premium_service.dart';
 import 'package:sigara_defteri/services/storage_service.dart';
+import 'package:sigara_defteri/services/widget_service.dart';
 import 'package:sigara_defteri/shared/theme/app_theme.dart';
 
 // TODO: Gerçek API key'leri buraya gir.
@@ -26,6 +28,12 @@ void main() async {
 
   await StorageService.init();
   await NotificationService.init();
+
+  // Reklam SDK'sını (sadece iOS kullanıyoruz) başlat.
+  await MobileAds.instance.initialize();
+
+  // Ana ekran widget'ını ilk veriyle güncelle
+  refreshHomeWidget();
 
   if (!kDebugPremium) {
     // RevenueCat sadece gerçek API key varken yapılandırılır.

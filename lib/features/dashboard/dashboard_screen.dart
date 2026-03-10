@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' show ImageFilter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sigara_defteri/app/router.dart';
 import 'package:sigara_defteri/models/smoke_entry.dart';
 import 'package:sigara_defteri/models/trigger.dart';
 import 'package:sigara_defteri/providers/smoke_providers.dart';
 import 'package:sigara_defteri/providers/stats_providers.dart';
+import 'package:sigara_defteri/services/premium_service.dart';
 import 'package:sigara_defteri/shared/theme/app_theme.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -19,6 +21,8 @@ class DashboardScreen extends ConsumerWidget {
     final breakdown = ref.watch(todayTypeBreakdownProvider);
     final settings = ref.watch(settingsProvider);
     final weeklyMini = ref.watch(weeklyMiniProvider);
+    final isPremium = ref.watch(premiumProvider).isPremium;
+    final olderEntries = ref.watch(entriesOlderThan7DaysProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -69,6 +73,32 @@ class DashboardScreen extends ConsumerWidget {
                   index: e.key,
                   ref: ref,
                 )),
+          ],
+          if (olderEntries.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            const Padding(
+              padding: EdgeInsets.only(left: 2, bottom: 10),
+              child: Text(
+                'DAHA ESKİ KAYITLAR',
+                style: TextStyle(
+                  color: AppColors.textDisabled,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            if (isPremium)
+              ...olderEntries.asMap().entries.map((e) => _EntryTile(
+                    entry: e.value,
+                    index: entries.length + e.key,
+                    ref: ref,
+                  ))
+            else
+              _BlurredHistoryCTA(
+                entryCount: olderEntries.length,
+                onTap: () => Navigator.pushNamed(context, AppRouter.paywall),
+              ),
           ],
         ],
       ),
@@ -381,6 +411,80 @@ class _WeeklyMiniCard extends StatelessWidget {
 }
 
 // ── İstatistik linki ─────────────────────────────────────────────────────────
+
+class _BlurredHistoryCTA extends StatelessWidget {
+  final int entryCount;
+  final VoidCallback onTap;
+
+  const _BlurredHistoryCTA({required this.entryCount, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Blurred placeholder
+              Container(
+                height: 100,
+                color: AppColors.surface,
+                child: Center(
+                  child: Icon(Icons.history, size: 40, color: AppColors.textDisabled.withValues(alpha: 0.5)),
+                ),
+              ),
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                child: Container(
+                  height: 100,
+                  color: AppColors.background.withValues(alpha: 0.6),
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '$entryCount kayıt 7 günden eski',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Tüm geçmişi gör',
+                      style: TextStyle(
+                        color: Color(0xFF1A1200),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _StatsLink extends StatelessWidget {
   final VoidCallback onTap;

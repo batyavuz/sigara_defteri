@@ -3,10 +3,13 @@ import 'dart:math' show max;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sigara_defteri/app/router.dart';
 import 'package:sigara_defteri/models/trigger.dart';
 import 'package:sigara_defteri/providers/smoke_providers.dart';
 import 'package:sigara_defteri/providers/stats_providers.dart';
+import 'package:sigara_defteri/services/premium_service.dart';
 import 'package:sigara_defteri/shared/theme/app_theme.dart';
+import 'package:sigara_defteri/shared/widgets/premium_gate.dart';
 
 // ── Tetikleyici renk paleti ───────────────────────────────────────────────────
 
@@ -88,6 +91,7 @@ class _WeeklyTab extends ConsumerWidget {
     final triggerDist = ref.watch(weeklyTriggerDistProvider);
     final costReport = ref.watch(costReportProvider);
     final settings = ref.watch(settingsProvider);
+    final isPremium = ref.watch(premiumProvider).isPremium;
 
     final values = totals.values.toList();
     final dates = totals.keys.toList();
@@ -103,10 +107,13 @@ class _WeeklyTab extends ConsumerWidget {
         const SizedBox(height: 24),
         _SectionLabel('MALİYET RAPORU'),
         const SizedBox(height: 10),
-        _CostReportGrid(report: costReport, showCost: settings.pricePerPack > 0),
+        _CostReportGrid(report: costReport, showCost: settings.pricePerPack > 0, isPremium: isPremium),
         if (settings.pricePerPack > 0 && costReport.year > 0) ...[
           const SizedBox(height: 12),
-          _YearlyCostBanner(amount: costReport.year),
+          PremiumGate(
+            fallback: const SizedBox.shrink(),
+            child: _YearlyCostBanner(amount: costReport.year),
+          ),
         ],
         const SizedBox(height: 24),
         _SectionLabel('TETİKLEYİCİ DAĞILIMI (Son 7 Gün)'),
@@ -121,6 +128,21 @@ class _WeeklyTab extends ConsumerWidget {
 
 class _MonthlyTab extends ConsumerWidget {
   const _MonthlyTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PremiumGate(
+      fallback: _PremiumUpsell(
+        title: 'Aylık istatistikler Premium üyeler içindir',
+        subtitle: 'Son 30 gün grafiği, aylık maliyet ve tetikleyici dağılımı',
+      ),
+      child: const _MonthlyTabContent(),
+    );
+  }
+}
+
+class _MonthlyTabContent extends ConsumerWidget {
+  const _MonthlyTabContent();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -159,6 +181,56 @@ class _MonthlyTab extends ConsumerWidget {
         const SizedBox(height: 10),
         _TriggerPieSection(distribution: triggerDist),
       ],
+    );
+  }
+}
+
+/// Premium gerektiğinde gösterilen CTA
+class _PremiumUpsell extends ConsumerWidget {
+  final String title;
+  final String subtitle;
+
+  const _PremiumUpsell({required this.title, this.subtitle = ''});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.workspace_premium_outlined, color: AppColors.primary, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+              if (subtitle.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () => Navigator.pushNamed(context, AppRouter.paywall),
+                child: const Text('Premium\'a Geç'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -494,14 +566,19 @@ class _MonthlyStatsRow extends StatelessWidget {
 
 // ── Maliyet raporu grid ───────────────────────────────────────────────────────
 
-class _CostReportGrid extends StatelessWidget {
+class _CostReportGrid extends ConsumerWidget {
   final CostReport report;
   final bool showCost;
+  final bool isPremium;
 
-  const _CostReportGrid({required this.report, required this.showCost});
+  const _CostReportGrid({
+    required this.report,
+    required this.showCost,
+    this.isPremium = true,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (!showCost) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -518,6 +595,63 @@ class _CostReportGrid extends StatelessWidget {
       );
     }
 
+    if (!isPremium) {
+      return GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.6,
+        children: [
+          _CostCell(label: 'Bugün', amount: report.today),
+          _CostCell(label: 'Bu Hafta', amount: report.week),
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRouter.paywall),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.lock_outline, color: AppColors.textDisabled, size: 24),
+                    SizedBox(height: 6),
+                    Text('Bu Ay', style: TextStyle(color: AppColors.textDisabled, fontSize: 12)),
+                    Text('Premium', style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, AppRouter.paywall),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.lock_outline, color: AppColors.textDisabled, size: 24),
+                    SizedBox(height: 6),
+                    Text('Bu Yıl', style: TextStyle(color: AppColors.textDisabled, fontSize: 12)),
+                    Text('Premium', style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -525,7 +659,7 @@ class _CostReportGrid extends StatelessWidget {
       crossAxisSpacing: 8,
       mainAxisSpacing: 8,
       childAspectRatio: 1.6,
-      children: [
+        children: [
         _CostCell(label: 'Bugün', amount: report.today),
         _CostCell(label: 'Bu Hafta', amount: report.week),
         _CostCell(label: 'Bu Ay', amount: report.month),
