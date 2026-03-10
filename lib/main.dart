@@ -60,7 +60,7 @@ class SigaraDefteriApp extends StatelessWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute: AppRouter.dashboard,
+      initialRoute: AppRouter.splash,
     );
   }
 }

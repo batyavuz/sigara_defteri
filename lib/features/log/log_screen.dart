@@ -137,7 +137,7 @@ class _LogScreenState extends ConsumerState<LogScreen> {
                   ? const SizedBox(
                       height: 22,
                       width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black),
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.primary),
                     )
                   : const Text('Kaydet'),
             ),

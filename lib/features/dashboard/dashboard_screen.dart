@@ -26,7 +26,24 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sigara Defteri'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/logo.png',
+              height: 32,
+              width: 32,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.smoking_rooms_rounded,
+                color: AppColors.primary,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('Sigara Defteri'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -36,7 +53,15 @@ class DashboardScreen extends ConsumerWidget {
           const SizedBox(width: 4),
         ],
       ),
-      body: ListView(
+      body: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOut,
+        builder: (context, value, child) => Opacity(
+          opacity: value,
+          child: child,
+        ),
+        child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
         children: [
           _TodaySummaryCard(
@@ -101,6 +126,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
           ],
         ],
+        ),
       ),
       floatingActionButton: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0.9, end: 1),

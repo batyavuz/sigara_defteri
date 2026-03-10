@@ -1,7 +1,7 @@
 # CLAUDE.md — Sigara Defteri
 
 > Bu dosya her Claude Code session başında okunmalıdır.
-> Son güncelleme: 2026-03-08 (Faz 4 tamamlandı, çıkış öncesi kontrol eklendi)
+> Son güncelleme: 2026-03-08 (Faz 1 + Faz 2 tamamlandı)
 
 ---
 
@@ -11,7 +11,7 @@
 **Platform:** Flutter (iOS + Android)  
 **Geliştirici:** Batuhan (Solo dev)  
 **Yayıncı:** Kişisel (Google Play + App Store)  
-**Durum:** Faz 4 tamamlandı — Widget, günlük hatırlatma, CSV export, Ayarlar UI; çıkış öncesi kontrol listesi aşağıda.
+**Durum:** Faz 3 kısmen tamamlandı — 3 dosyada gate/UI eksik (bkz. Faz 3 listesi); Faz 4 hazır
 
 Sigara ve vape tüketimini takip eden, hem bırakmak isteyenlere hem de tüketimini izlemek isteyenlere hitap eden minimalist bir günlük/defter uygulaması. "Alkol Defteri" ile aynı marka DNA'sını taşır — yargılamadan takip.
 
@@ -97,11 +97,11 @@ lib/
 - [x] stats_screen.dart — aylık tab + yıllık maliyet PremiumGate
 - [x] dashboard_screen.dart — 7 günden eski kayıtlar blur, "Tüm geçmişi gör" CTA
 
-### ✅ Faz 4 — Polish & ASO
-- [x] Ana ekran widget'ı (Android: WidgetService + SigaraDefteriWidgetProvider, koyu tema; iOS için WidgetKit ayrı eklenebilir)
-- [x] Günlük hatırlatma (NotificationService.scheduleDailyReminder + Ayarlar'da aç/kapat ve saat seçimi)
-- [x] Veri export (CSV) — Premium kullanıcıya Ayarlar'dan "Veriyi dışa aktar (CSV)"
-- [ ] Store görselleri ve metadata (ekran görüntüleri, açıklama, gizlilik politikası linki)
+### 🔄 Faz 4 — Polish & ASO (MEVCUT FAZ)
+- [ ] Ana ekran widget'ı
+- [ ] Push bildirimler (günlük hatırlatma)
+- [ ] Veri export (CSV)
+- [ ] Store görselleri ve metadata
 
 ---
 
