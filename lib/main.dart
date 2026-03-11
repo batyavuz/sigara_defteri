@@ -29,8 +29,18 @@ void main() async {
   await StorageService.init();
   await NotificationService.init();
 
-  // Reklam SDK'sını (sadece iOS kullanıyoruz) başlat.
-  await MobileAds.instance.initialize();
+  // AdMob: Sadece Android'de başlat. iOS'ta initialize() TestFlight/release'da
+  // GADApplicationVerifyPublisherInitializedCorrectly ile çökme yapıyor (init başarısız olunca
+  // SDK abort ediyor). Gerçek iOS App ID Info.plist'e girilip reklamlar açılacaksa
+  // aşağıdaki Platform.isAndroid koşulunu kaldırıp iOS'ta da init edebilirsin.
+  if (Platform.isAndroid) {
+    try {
+      await MobileAds.instance.initialize();
+    } catch (e, st) {
+      debugPrint('AdMob init hatası: $e');
+      debugPrint(st.toString());
+    }
+  }
 
   // Ana ekran widget'ını ilk veriyle güncelle
   refreshHomeWidget();
