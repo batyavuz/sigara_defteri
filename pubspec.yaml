@@ -2,7 +2,7 @@ name: sigara_defteri
 description: "Sigara ve vape tüketimini yargılamadan takip eden minimalist günlük uygulaması."
 publish_to: 'none'
 
-version: 1.0.0+5
+version: 1.0.0+6
 
 environment:
   sdk: ^3.7.0
